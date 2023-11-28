@@ -83,7 +83,7 @@ def indicator_signal(client, symbol):
     # tech calculation
     rate_infos.sort(key=lambda x: x['ctm'])
     candles = pd.DataFrame(rate_infos)
-    candles['close'] = candles['open'] #(candles['close'] + candles['open']) / 10 ** digits
+    candles['close'] = candles['open'] / 10 ** digits
     print(f'Info: got {symbol} {len(candles)} ticks.')
     ta_strategy = ta.Strategy(
         name="Multi-Momo",
