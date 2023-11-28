@@ -2,8 +2,11 @@
 ### VirtualEnv template
 # Virtualenv
 .venv
+venv
 # PyCharm
 .idea/
+# VS Code
+.vscode
 ### Python template
 # Distribution / packaging
 *.egg-info/
@@ -18,3 +21,9 @@ __pycache__/
 
 ### other files
 .DS_Store
+.env
+.dockerignore
+*.ipynb
+*.csv
+*.bak
+*.json
