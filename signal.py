@@ -19,12 +19,15 @@ def macd_cross(df):
     cols = df.columns.to_list()
     col_xa = [c for c in cols if c.startswith('MACD') and c.endswith('_XA_0')]
     col_xb = [c for c in cols if c.startswith('MACD') and c.endswith('_XB_0')]
-    col_xa = col_xa[0] if col_xa else ''
-    col_xb = col_xb[0] if col_xb else ''
-    buy_signal = df.iloc[-1][col_xa]
+    col_a0 = [c for c in cols if c.startswith('MACD') and c.endswith('_A_0')]
+    col_xa = col_xa[0] if col_xa else 'close'
+    col_xb = col_xb[0] if col_xb else 'close'
+    col_a0 = col_a0[0] if col_a0 else 'close'
+    buy_signal  = df.iloc[-1][col_xa]
     sell_signal = df.iloc[-1][col_xb]
+    macd_signal = df.iloc[-1][col_a0]
     open_tx = sum([buy_signal, sell_signal]) == 1
-    mode = 'none'
+    mode = 'buy' if macd_signal > 0 else 'sell'
     if open_tx:
         mode = 'buy' if buy_signal == 1 else 'sell'
     return open_tx, mode
