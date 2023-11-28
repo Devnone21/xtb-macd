@@ -9,7 +9,6 @@ import json
 import os
 import pandas as pd
 import pandas_ta as ta
-import cloud as gcp
 
 # Initial parameters: [.env, settings.json]
 load_dotenv(find_dotenv())
@@ -43,18 +42,22 @@ class Cache:
         return [json.loads(s) for s in self.client.mget(keys)]
 
 
-def macd_cross(df):
-    """As evaluate function, takes pandas.DataFrame contains 'MACD..._A_0' column,
-    return: (bool)whether_to_open_position, (str)mode_buy_or_sell.
-    """
-    cols = df.columns.to_list()
-    col = [c for c in cols if c.startswith('MACD') and c.endswith('_A_0')]
-    signal_col = col[0] if col else ''
-    last_signal = df.iloc[-1][signal_col]
-    prev_signal = df.iloc[-2][signal_col]
-    open_tx = last_signal != prev_signal
-    mode = 'buy' if last_signal > 0 else 'sell'
-    return open_tx, mode
+class Notify:
+    def __init__(self):
+        self.ts = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.texts = ''
+
+    def setts(self, ts):
+        self.ts = ts
+        return ts
+
+    def add(self, message):
+        self.texts += f'{message}\n'
+        return message
+
+    def print_notify(self, message):
+        self.add(message)
+        print(message)
 
 
 def indicator_signal(client, symbol):
@@ -80,7 +83,7 @@ def indicator_signal(client, symbol):
     # tech calculation
     rate_infos.sort(key=lambda x: x['ctm'])
     candles = pd.DataFrame(rate_infos)
-    candles['close'] = (candles['close'] + candles['open']) / 10 ** digits
+    candles['close'] = candles['open'] #(candles['close'] + candles['open']) / 10 ** digits
     print(f'Info: got {symbol} {len(candles)} ticks.')
     ta_strategy = ta.Strategy(
         name="Multi-Momo",
@@ -89,10 +92,11 @@ def indicator_signal(client, symbol):
     candles.ta.strategy(ta_strategy)
     # clean
     candles.dropna(inplace=True, ignore_index=True)
-    epoch_ms = candles.iloc[-1]['ctm']
     print(f'Info: cleaned {symbol} {len(candles)} ticks.')
     # evaluate
+    from signal import macd_cross
     open_tx, mode = macd_cross(candles)
+    epoch_ms = candles.iloc[-1]['ctm']
     return candles, {"epoch_ms": epoch_ms, "open": open_tx, "mode": mode}
 
 
@@ -101,24 +105,6 @@ def trigger_open_trade(client, symbol, mode='buy'):
         return client.open_trade(mode, symbol, volume, rate_tp=rate_tp, rate_sl=rate_sl)
     except TransactionRejected as e:
         return e
-
-
-class Notify:
-    def __init__(self):
-        self.ts = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.texts = ''
-
-    def setts(self, ts):
-        self.ts = ts
-        return ts
-
-    def add(self, message):
-        self.texts += f'{message}\n'
-        return message
-
-    def print_notify(self, message):
-        self.add(message)
-        print(message)
 
 
 def run():
@@ -139,7 +125,7 @@ def run():
         open_tx = signal.get("open")
         mode = signal.get("mode")
         ts = line.setts(datetime.fromtimestamp(int(signal.get("epoch_ms"))/1000))
-        line.print_notify(f'\nSignal: {symbol}, {ts}, {open_tx}, {mode}, {close}')
+        line.print_notify(f'\nSignal: {symbol}, {ts}, {open_tx}, {mode.upper()}, {close}')
         print(df.tail())
         # Check signal to open transaction
         if open_tx:
@@ -147,6 +133,7 @@ def run():
             line.print_notify(f'>> Open trade: {symbol} at {ts} of {volume} with {mode.upper()}, {res}')
 
     client.logout()
+    import cloud as gcp
     gcp.pub(line.texts)
 
 
