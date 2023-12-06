@@ -1,22 +1,35 @@
-# XTBApi
+# xtb-macd
+MACD auto trader using Api for XTB trading platform.
 
-> Api for XTB trading platform.
 
-A python based API for XTB trading using _websockets_ client.
+Prerequisite:
+- Redis DB (for history candles storage)
+- Google PubSub Topic (for mobile alert)
 
-# Installing / Getting started
+## Installing / Getting started
 
-To install the API, just clone the repository.
+Just clone the repository, set env variables and parameters.
 
 ```bash
-git clone git@github.com:federico123579/XTBApi.git
-cd XTBApi/
-python3 -m venv env
-. env/bin/activate
-pip install .
+git clone https://github.com/Devnone21/xtb-macd.git
+cd xtb-macd
+cp .env.example .env
+cp settings.json.example settings.json
+# nano .env
+# nano settings.json
+# nano main.sh
 ```
 
-Then you can use XTBApi like this simple tutorial.
+Setup cron to trigger every period (default=15m)
+
+```bash
+crontab -e
+
+# 1,16,31,46 * * * * /path_to/xtb-macd/main.sh >>/tmp/xtb-macd.log 2>>/tmp/xtb-error.log
+```
+
+
+Credit: use XTBApi like this simple tutorial.
 ```python
 from XTBApi.api import Client
 # FIRST INIT THE CLIENT

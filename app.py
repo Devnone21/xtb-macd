@@ -106,9 +106,17 @@ def trigger_open_trade(client, symbol, mode='buy'):
         return e
 
 
-def trigger_close_trade():
-    # TODO: res = trigger_close_trade()
-    return False
+def trigger_close_trade(client, symbol, mode):
+    orders = {k: trans.order_id
+              for k, trans in client.trade_rec.items() if trans.symbol == symbol and trans.mode == mode}
+    print(f'# Order to be closed: {orders}')
+    res = {}
+    for k, order_id in orders.items():
+        try:
+            res[k] = client.close_trade_only(order_id)
+        except TransactionRejected as e:
+            res[k] = f'Exception: {e}'
+    return res
 
 
 def run():
@@ -138,7 +146,7 @@ def run():
             res = trigger_open_trade(client, symbol=symbol, mode=mode)
             report.print_notify(f'>> Open trade: {symbol} at {ts} of {volume} with {mode.upper()}, {res}')
         if action.upper() in ('CLOSE',):
-            res = trigger_close_trade()
+            res = trigger_close_trade(client, symbol=symbol, mode=mode)
             report.print_notify(f'>> Close opened trades: {symbol} at {ts} with {mode.upper()}, {res}')
 
     client.logout()
