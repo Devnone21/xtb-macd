@@ -90,8 +90,8 @@ def indicator_signal(symbol):
     candles.dropna(inplace=True, ignore_index=True)
     print(f'Info: cleaned {symbol} {len(candles)} ticks.')
     # evaluate
-    from signals import rsi
-    action, mode = rsi(candles)
+    from signals import macd_cross
+    action, mode = macd_cross(candles)
     epoch_ms = candles.iloc[-1]['ctm']
     return candles, {"epoch_ms": epoch_ms, "action": action, "mode": mode}
 
